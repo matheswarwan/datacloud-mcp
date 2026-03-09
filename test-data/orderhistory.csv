@@ -1,0 +1,11 @@
+OrderID,CustomerID,OrderDate,OrderStatus,TotalAmount,CurrencyCode,ShippingMethod,PaymentMethod,BillingCity,BillingCountry
+ORD-1001,CUST-501,2023-10-01T10:00:00Z,Completed,150.50,USD,Standard,Credit Card,New York,USA
+ORD-1002,CUST-502,2023-10-02T14:30:00Z,Shipped,89.99,USD,Express,PayPal,Los Angeles,USA
+ORD-1003,CUST-503,2023-10-03T09:15:00Z,Pending,210.00,CAD,Standard,Credit Card,Toronto,Canada
+ORD-1004,CUST-501,2023-10-05T16:45:00Z,Completed,45.00,USD,Standard,Credit Card,New York,USA
+ORD-1005,CUST-504,2023-10-06T11:20:00Z,Cancelled,12.50,GBP,Express,Debit Card,London,UK
+ORD-1006,CUST-505,2023-10-07T08:00:00Z,Completed,599.99,USD,Overnight,Credit Card,Chicago,USA
+ORD-1007,CUST-502,2023-10-08T13:10:00Z,Processing,120.00,USD,Standard,PayPal,Los Angeles,USA
+ORD-1008,CUST-506,2023-10-09T15:55:00Z,Completed,34.25,AUD,Standard,Credit Card,Sydney,Australia
+ORD-1009,CUST-507,2023-10-10T10:30:00Z,Shipped,88.00,CAD,Express,Apple Pay,Vancouver,Canada
+ORD-1010,CUST-503,2023-10-11T12:00:00Z,Completed,150.00,CAD,Standard,Credit Card,Toronto,Canada

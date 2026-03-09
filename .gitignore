@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.env
+*.key
+*.pem
+*.p12
+.DS_Store
+.claude/
+.vscode/
+*.zip
