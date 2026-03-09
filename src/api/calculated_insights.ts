@@ -4,23 +4,54 @@ const CI_PATH = "/services/data/v65.0/ssot/calculated-insights";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-export interface CalculatedInsight {
-  calculatedInsightName?: string;
-  name?: string;
-  label?: string;
-  description?: string;
-  status?: string;
-  sql?: string;
+export interface CalculatedInsightField {
+  apiName: string;
+  displayName?: string;
+  dataType?: string;
+  fieldRole?: string;        // "DIMENSION" | "MEASURE"
+  formula?: string;
+  dateGranularity?: string | null;
+  fieldAggregationType?: string;
+  dataSource?: { sourceApiName?: string; type?: string };
+  creationType?: string;
   [key: string]: unknown;
 }
 
-interface CIListResponse {
-  collection?: { count?: number };
+export interface CalculatedInsight {
+  apiName?: string;
+  displayName?: string;
+  description?: string;
+  calculatedInsightStatus?: string;  // "ACTIVE" | "INACTIVE" etc.
+  definitionStatus?: string;         // "IN_USE" | "DRAFT" etc.
+  definitionType?: string;           // "HISTORY_METRIC" | "METRIC" etc.
+  expression?: string;               // the SQL query
+  isEnabled?: boolean;
+  dataSpace?: string;
+  creationType?: string;
+  dimensions?: CalculatedInsightField[];
+  measures?: CalculatedInsightField[];
+  lastRunStatus?: string;
+  lastRunDateTime?: string;
+  lastRunStatusDateTime?: string;
+  lastRunStatusErrorCode?: string | null;
+  publishScheduleInterval?: string;
+  [key: string]: unknown;
+}
+
+interface CICollection {
+  count?: number;
+  total?: number;
+  currentPageToken?: string;
+  currentPageUrl?: string;
   items?: CalculatedInsight[];
   nextPageToken?: string | null;
   nextPageUrl?: string | null;
   previousPageToken?: string | null;
   previousPageUrl?: string | null;
+}
+
+interface CIListResponse {
+  collection?: CICollection;
   [key: string]: unknown;
 }
 
@@ -43,35 +74,23 @@ export async function fetchCalculatedInsights(): Promise<CalculatedInsight[]> {
     console.error(`[ci] body: ${JSON.stringify(response.data).slice(0, 800)}`);
 
     const raw = response.data;
+    const collection = raw?.collection;
 
-    // Check collection.count — if 0 or missing, no CIs exist
-    const count = raw?.collection?.count;
+    // Check count — if 0, no CIs exist
+    const count = collection?.count ?? collection?.total;
     if (count !== undefined && count === 0) {
       console.error(`[ci] collection.count is 0 — no calculated insights`);
       return [];
     }
 
-    // Primary path: items array
-    if (Array.isArray(raw?.items) && raw.items.length > 0) {
-      console.error(`[ci] Found ${raw.items.length} item(s) in response`);
-
-      // Fetch full detail for each CI if items only contain summary fields
-      const items = raw.items;
-      const detailed = await Promise.all(
-        items.map(async (ci) => {
-          const ciName = ci.calculatedInsightName ?? ci.name;
-          if (!ciName) return ci;
-          try {
-            return await fetchCalculatedInsight(ciName);
-          } catch {
-            return ci; // fall back to summary if detail fetch fails
-          }
-        })
-      );
-      return detailed;
+    // Items live at collection.items
+    const items = collection?.items;
+    if (Array.isArray(items) && items.length > 0) {
+      console.error(`[ci] Found ${items.length} of ${count ?? "?"} calculated insight(s)`);
+      return items;
     }
 
-    console.error(`[ci] No items found in response`);
+    console.error(`[ci] No items found in collection`);
     return [];
   } catch (err) {
     if ((err as { isAxiosError?: boolean }).isAxiosError) {

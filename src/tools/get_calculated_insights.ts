@@ -36,28 +36,52 @@ export const GET_CALCULATED_INSIGHTS_TOOL = {
 };
 
 function formatCI(ci: CalculatedInsight): string {
-  const name = ci.calculatedInsightName ?? ci.name ?? "—";
-  const label = ci.label ? ` (${ci.label})` : "";
-  const status = ci.status ?? "—";
+  const name        = ci.apiName ?? "—";
+  const displayName = ci.displayName ? ` (${ci.displayName})` : "";
+  const status      = ci.calculatedInsightStatus ?? "—";
+  const defStatus   = ci.definitionStatus ? ` / ${ci.definitionStatus}` : "";
+  const type        = ci.definitionType ? ` [${ci.definitionType}]` : "";
   const description = ci.description ? `\n  Description: ${ci.description}` : "";
-  const sql = ci.sql ? `\n  SQL:\n\`\`\`sql\n${ci.sql}\n\`\`\`` : "";
+  const lastRun     = ci.lastRunDateTime
+    ? `\n  Last run: ${ci.lastRunDateTime} — ${ci.lastRunStatus ?? "unknown"}`
+    : "";
 
-  // Show any extra fields not already handled
-  const shown = new Set(["calculatedInsightName", "name", "label", "status", "description", "sql"]);
-  const extras = Object.entries(ci)
-    .filter(([k]) => !shown.has(k))
-    .map(([k, v]) => `  ${k}: ${JSON.stringify(v)}`)
+  const dimensions = (ci.dimensions ?? [])
+    .map((d) => `    • ${d.displayName ?? d.apiName} [${d.dataType ?? "?"}] — ${d.formula ?? ""}`)
+    .join("\n");
+  const measures = (ci.measures ?? [])
+    .map((m) => `    • ${m.displayName ?? m.apiName} [${m.dataType ?? "?"}] — ${m.formula ?? ""}`)
     .join("\n");
 
-  return `### ${name}${label}\n  Status: ${status}${description}${sql}${extras ? `\n${extras}` : ""}`;
+  const sql = ci.expression
+    ? `\n  SQL:\n\`\`\`sql\n${ci.expression}\n\`\`\``
+    : "";
+
+  return [
+    `### ${name}${displayName}${type}`,
+    `  Status: ${status}${defStatus}${description}${lastRun}`,
+    dimensions ? `  Dimensions:\n${dimensions}` : "",
+    measures   ? `  Measures:\n${measures}` : "",
+    sql,
+  ].filter(Boolean).join("\n");
 }
 
 export async function handleGetCalculatedInsights(
   input: GetCalculatedInsightsInput
 ): Promise<string> {
   if (input.name) {
-    const ci = await fetchCalculatedInsight(input.name);
-    return formatCI(ci);
+    // Try direct fetch first; fall back to filtering the list
+    try {
+      const ci = await fetchCalculatedInsight(input.name);
+      return formatCI(ci);
+    } catch {
+      const all = await fetchCalculatedInsights();
+      const match = all.find(
+        (c) => c.apiName === input.name || c.displayName?.toLowerCase() === input.name!.toLowerCase()
+      );
+      if (!match) return `No calculated insight found with name "${input.name}".`;
+      return formatCI(match);
+    }
   }
 
   const all = await fetchCalculatedInsights();
