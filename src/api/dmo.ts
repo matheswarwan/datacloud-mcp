@@ -1,6 +1,7 @@
 import { getDCClient } from "./client.js";
 
 const DMO_METADATA_PATH = "/services/data/v65.0/ssot/data-model-objects";
+const PAGE_SIZE = 50;
 
 export interface DmoField {
   name: string;
@@ -34,22 +35,36 @@ export interface DmoMetadataResponse {
 // ── In-memory cache ──────────────────────────────────────────────────────────
 let _cache: DmoObject[] | null = null;
 
+function extractPage(raw: DmoMetadataResponse | DmoObject[]): DmoObject[] {
+  return Array.isArray(raw)
+    ? raw
+    : ((raw.dataModelObject ?? raw.metadata ?? raw.data ?? []) as DmoObject[]);
+}
+
 export async function fetchDmoMetadata(forceRefresh = false): Promise<DmoObject[]> {
   if (_cache && !forceRefresh) return _cache;
 
   const client = await getDCClient();
-  const fullUrl = `${client.defaults.baseURL}${DMO_METADATA_PATH}`;
-  console.error(`[dmo] GET ${fullUrl}`);
+  const all: DmoObject[] = [];
+  let offset = 0;
+
   try {
-    const response = await client.get<DmoMetadataResponse>(DMO_METADATA_PATH);
-    console.error(`[dmo] Response status: ${response.status}`);
-    console.error(`[dmo] Response body: ${JSON.stringify(response.data).slice(0, 500)}`);
-    // The API may return { metadata: [...] } or directly an array — handle both
-    const raw = response.data;
-    _cache = Array.isArray(raw)
-      ? raw
-      : ((raw.dataModelObject ?? raw.metadata ?? raw.data ?? []) as DmoObject[]);
-    console.error(`[dmo] Cached ${_cache.length} DMO objects`);
+    while (true) {
+      const url = `${DMO_METADATA_PATH}?offset=${offset}`;
+      console.error(`[dmo] GET ${client.defaults.baseURL}${url}`);
+      const response = await client.get<DmoMetadataResponse>(url);
+      console.error(`[dmo] Response status: ${response.status}`);
+
+      const page = extractPage(response.data);
+      all.push(...page);
+      console.error(`[dmo] Fetched ${page.length} DMOs at offset ${offset} (total so far: ${all.length})`);
+
+      if (page.length < PAGE_SIZE) break;
+      offset += PAGE_SIZE;
+    }
+
+    _cache = all;
+    console.error(`[dmo] Cached ${_cache.length} DMO objects total`);
     return _cache;
   } catch (err) {
     if ((err as { isAxiosError?: boolean }).isAxiosError) {

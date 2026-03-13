@@ -4,6 +4,40 @@ const DATA_STREAMS_PATH = "/services/data/v65.0/ssot/data-streams";
 
 export type DataStream = Record<string, unknown>;
 
+export interface DataStreamField {
+  name: string;
+  label?: string;
+  type?: string;
+  dataType?: string;
+  [key: string]: unknown;
+}
+
+export interface DataStreamDetail extends DataStream {
+  fields?: DataStreamField[];
+  dataStreamFields?: DataStreamField[];
+}
+
+export async function fetchDataStreamDetail(developerName: string): Promise<DataStreamDetail> {
+  const client = await getDCClient();
+  const url = `${DATA_STREAMS_PATH}/${encodeURIComponent(developerName)}`;
+  console.error(`[datastreams] GET ${client.defaults.baseURL}${url}`);
+  try {
+    const response = await client.get<DataStreamDetail>(url);
+    console.error(`[datastreams] HTTP ${response.status}`);
+    return response.data;
+  } catch (err) {
+    if ((err as { isAxiosError?: boolean }).isAxiosError) {
+      const axiosErr = err as { response?: { data?: unknown; status?: number }; message: string };
+      const status = axiosErr.response?.status;
+      const detail = axiosErr.response?.data
+        ? JSON.stringify(axiosErr.response.data)
+        : axiosErr.message;
+      throw new Error(`Failed to fetch data stream "${developerName}" (HTTP ${status ?? "unknown"}): ${detail}`);
+    }
+    throw err;
+  }
+}
+
 export async function fetchDataStreams(limit = 100): Promise<DataStream[]> {
   const client = await getDCClient();
   const fullUrl = `${client.defaults.baseURL}${DATA_STREAMS_PATH}?limit=${limit}`;

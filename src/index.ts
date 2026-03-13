@@ -24,6 +24,21 @@ import {
   GetDmoSchemaInputSchema,
   handleGetDmoSchema,
 } from "./tools/get_dmo_schema.js";
+import {
+  GET_DMO_MAPPING_TOOL,
+  GetDmoMappingInputSchema,
+  handleGetDmoMapping,
+} from "./tools/get_dmo_mapping.js";
+import {
+  PROPOSE_DMO_FIELD_MAPPING_TOOL,
+  ProposeDmoFieldMappingInputSchema,
+  handleProposeDmoFieldMapping,
+} from "./tools/propose_dmo_field_mapping.js";
+import {
+  APPLY_DMO_FIELD_MAPPING_TOOL,
+  ApplyDmoFieldMappingInputSchema,
+  handleApplyDmoFieldMapping,
+} from "./tools/apply_dmo_field_mapping.js";
 
 // ── Calculated Insights tools ─────────────────────────────────────────────────
 import {
@@ -64,6 +79,9 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     GET_DATA_STREAMS_TOOL,
     GET_SEGMENTS_TOOL,
     GET_DMO_SCHEMA_TOOL,
+    GET_DMO_MAPPING_TOOL,
+    PROPOSE_DMO_FIELD_MAPPING_TOOL,
+    APPLY_DMO_FIELD_MAPPING_TOOL,
     GET_CALCULATED_INSIGHTS_TOOL,
     PROPOSE_CI_SQL_TOOL,
     CREATE_CALCULATED_INSIGHT_TOOL,
@@ -91,6 +109,24 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     if (name === "get_dmo_schema") {
       const input = GetDmoSchemaInputSchema.parse(args ?? {});
       const text = await handleGetDmoSchema(input);
+      return { content: [{ type: "text", text }] };
+    }
+
+    if (name === "get_dmo_mapping") {
+      const input = GetDmoMappingInputSchema.parse(args ?? {});
+      const text = await handleGetDmoMapping(input);
+      return { content: [{ type: "text", text }] };
+    }
+
+    if (name === "propose_dmo_field_mapping") {
+      const input = ProposeDmoFieldMappingInputSchema.parse(args ?? {});
+      const text = await handleProposeDmoFieldMapping(input);
+      return { content: [{ type: "text", text }] };
+    }
+
+    if (name === "apply_dmo_field_mapping") {
+      const input = ApplyDmoFieldMappingInputSchema.parse(args ?? {});
+      const text = await handleApplyDmoFieldMapping(input);
       return { content: [{ type: "text", text }] };
     }
 

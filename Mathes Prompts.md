@@ -27,7 +27,7 @@ https://developer.salesforce.com/docs/data/connectapi/guide/dmo-use-case.html
 
 Fix response for 'Get calculated insights' 'what are the calculated insights available'
 
-
+`
 {
     "collection": {
         "count": 3,
@@ -107,7 +107,155 @@ Fix response for 'Get calculated insights' 'what are the calculated insights ava
         "total": 3
     }
 }
+`
 
+March 13, 2026 
+#4 Update to Get DMO Schemas
+
+When getting DMO schema, use offset which is a multiplier of 50. ie, only 50 records will be retreived in one request. When the project loads, load and store all the DMOs as one time activity.
+
+`services/data/v61.0//ssot/data-model-objects?offset=50`
+
+#5 Get DMO Mapping 
+
+Let's work on fetching DMO mapping. When required, provide the DMO name fetched from get DMO Schema and get their mapping. 
+
+`/services/data/v61.0//ssot/data-model-object-mappings?dmoDeveloperName=ssot__Individual__dlm`
+
+Below is a sample response 
+
+`{
+    "objectSourceTargetMaps": [
+        {
+            "developerName": "File_User_Profile_map_Individual_1748408696560",
+            "fieldMappings": [
+                {
+                    "developerName": "COMPANY__c_fieldmap_ssot__CurrentEmployerName__c",
+                    "sourceFieldDeveloperName": "COMPANY__c",
+                    "targetFieldDeveloperName": "ssot__CurrentEmployerName__c"
+                },
+                {
+                    "developerName": "DataSource__c_fieldmap_ssot__DataSourceId__c",
+                    "sourceFieldDeveloperName": "DataSource__c",
+                    "targetFieldDeveloperName": "ssot__DataSourceId__c"
+                },
+                {
+                    "developerName": "POSITION__c_fieldmap_ssot__Occupation__c",
+                    "sourceFieldDeveloperName": "POSITION__c",
+                    "targetFieldDeveloperName": "ssot__Occupation__c"
+                },
+                {
+                    "developerName": "BUSINESSENTITYID__c_fieldmap_ssot__Id__c",
+                    "sourceFieldDeveloperName": "BUSINESSENTITYID__c",
+                    "targetFieldDeveloperName": "ssot__Id__c"
+                },
+                {
+                    "developerName": "KQ_BUSINESSENTITYID__c_fieldmap_KQ_Id__c",
+                    "sourceFieldDeveloperName": "KQ_BUSINESSENTITYID__c",
+                    "targetFieldDeveloperName": "KQ_Id__c"
+                },
+                {
+                    "developerName": "HOMEPAGEURL__c_fieldmap_ssot__WebSiteURL__c",
+                    "sourceFieldDeveloperName": "HOMEPAGEURL__c",
+                    "targetFieldDeveloperName": "ssot__WebSiteURL__c"
+                },
+                {
+                    "developerName": "FIRSTNAME__c_fieldmap_ssot__FirstName__c",
+                    "sourceFieldDeveloperName": "FIRSTNAME__c",
+                    "targetFieldDeveloperName": "ssot__FirstName__c"
+                },
+                {
+                    "developerName": "DataSourceObject__c_fieldmap_ssot__DataSourceObjectId__c",
+                    "sourceFieldDeveloperName": "DataSourceObject__c",
+                    "targetFieldDeveloperName": "ssot__DataSourceObjectId__c"
+                },
+                {
+                    "developerName": "LASTNAME__c_fieldmap_ssot__LastName__c",
+                    "sourceFieldDeveloperName": "LASTNAME__c",
+                    "targetFieldDeveloperName": "ssot__LastName__c"
+                },
+                {
+                    "developerName": "InternalOrganization__c_fieldmap_ssot__InternalOrganizationId__c",
+                    "sourceFieldDeveloperName": "InternalOrganization__c",
+                    "targetFieldDeveloperName": "ssot__InternalOrganizationId__c"
+                },
+                {
+                    "developerName": "COMPANY__c_fieldmap_ssot__GenderId__c",
+                    "sourceFieldDeveloperName": "COMPANY__c",
+                    "targetFieldDeveloperName": "ssot__GenderId__c"
+                },
+                {
+                    "developerName": "COMPANY__c_fieldmap_ssot__GenderIdentity__c",
+                    "sourceFieldDeveloperName": "COMPANY__c",
+                    "targetFieldDeveloperName": "ssot__GenderIdentity__c"
+                }
+            ],
+            "sourceEntityDeveloperName": "File_User_Profile__dll",
+            "status": "ACTIVE",
+            "targetEntityDeveloperName": "ssot__Individual__dlm"
+        },
+        {
+            "developerName": "File_User_Details_and_Activities_map_Individual_1748452267367",
+            "fieldMappings": [
+                {
+                    "developerName": "industry_name__c_fieldmap_Industry_Name__c",
+                    "sourceFieldDeveloperName": "industry_name__c",
+                    "targetFieldDeveloperName": "Industry_Name__c"
+                },
+                {
+                    "developerName": "DataSource__c_fieldmap_ssot__DataSourceId__c",
+                    "sourceFieldDeveloperName": "DataSource__c",
+                    "targetFieldDeveloperName": "ssot__DataSourceId__c"
+                },
+                {
+                    "developerName": "DataSourceObject__c_fieldmap_ssot__DataSourceObjectId__c",
+                    "sourceFieldDeveloperName": "DataSourceObject__c",
+                    "targetFieldDeveloperName": "ssot__DataSourceObjectId__c"
+                },
+                {
+                    "developerName": "id__c_fieldmap_ssot__Id__c",
+                    "sourceFieldDeveloperName": "id__c",
+                    "targetFieldDeveloperName": "ssot__Id__c"
+                },
+                {
+                    "developerName": "KQ_id__c_fieldmap_KQ_Id__c",
+                    "sourceFieldDeveloperName": "KQ_id__c",
+                    "targetFieldDeveloperName": "KQ_Id__c"
+                },
+                {
+                    "developerName": "InternalOrganization__c_fieldmap_ssot__InternalOrganizationId__c",
+                    "sourceFieldDeveloperName": "InternalOrganization__c",
+                    "targetFieldDeveloperName": "ssot__InternalOrganizationId__c"
+                }
+            ],
+            "sourceEntityDeveloperName": "File_User_Details_and_Activities__dll",
+            "status": "ACTIVE",
+            "targetEntityDeveloperName": "ssot__Individual__dlm"
+        }
+    ]
+}
+`
+
+#6 Create DMO Mapping 
+
+When a user asks for DMO mapping to be performed, ask them for which data stream (you already have 'get data stream' function) and fetch that data stream's fields. Next, try to perform a mapping of data stream fields based on DMO you have in your memory. If matching field is found, ask the users to confirm and create those mapping by using below API. 
+
+Documentation: https://developer.salesforce.com/docs/data/connectapi/references/spec#tag/Data-Model-Objects/paths/~1ssot~1data-model-object-mappings~1%7BobjectSourceTargetMapDeveloperName%7D~1field-mappings~1%7BfieldSourceTargetMapDeveloperName%7D/patch 
+
+(Ignore the title that says 'Delete' for patch request. Must be a typo and I've teted this)
+
+` PATCH https://orgfarm-6cac2dc8f8-dev-ed.develop.my.salesforce.com/services/data/v61.0/ssot/data-model-object-mappings/File_User_Profile_map_Individual_1748408696560/field-mappings/ssot__Individual__dlm`
+
+`{
+  "sourceEntityDeveloperName": "File_User_Profile__dll",
+  "targetEntityDeveloperName": "ssot__Individual__dlm",
+  "fieldMapping": [
+    {
+      "sourceFieldDeveloperName": "COMPANY__c",
+      "targetFieldDeveloperName": "ssot__GenderIdentity__c"
+    }
+  ]
+}`
 
 # Notes: 
 
