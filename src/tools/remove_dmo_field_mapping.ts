@@ -2,19 +2,27 @@ import { z } from "zod";
 import { deleteDmoFieldMappings } from "../api/dmo_mapping.js";
 
 export const RemoveDmoFieldMappingInputSchema = z.object({
-  object_source_target_map_developer_name: z
+  source_entity_developer_name: z
     .string()
     .describe(
-      "Developer name of the objectSourceTargetMap to update (from get_dmo_mapping)."
+      "Developer name of the source data stream entity (e.g. 'File_User_Profile__dll'). " +
+      "This is the sourceEntityDeveloperName used when the mapping was created."
     ),
-  source_field_developer_names: z
-    .array(z.string())
+  field_mappings: z
+    .array(
+      z.object({
+        developer_name: z
+          .string()
+          .describe(
+            "Developer name of the individual field mapping — obtain this from get_dmo_mapping " +
+            "(the developerName on each fieldMapping entry)."
+          ),
+        source_field: z.string().describe("Source data stream field developer name."),
+        target_field: z.string().describe("Target DMO field developer name."),
+      })
+    )
     .min(1)
-    .describe("Developer names of the source data stream fields to remove."),
-  target_field_developer_names: z
-    .array(z.string())
-    .min(1)
-    .describe("Developer names of the target DMO fields whose mappings should be removed."),
+    .describe("List of field mappings to remove. Each entry requires its developerName from get_dmo_mapping."),
 });
 
 export type RemoveDmoFieldMappingInput = z.infer<typeof RemoveDmoFieldMappingInputSchema>;
@@ -22,35 +30,41 @@ export type RemoveDmoFieldMappingInput = z.infer<typeof RemoveDmoFieldMappingInp
 export const REMOVE_DMO_FIELD_MAPPING_TOOL = {
   name: "remove_dmo_field_mapping",
   description:
-    "Remove specific field mappings from a DMO mapping object in Data Cloud. " +
-    "Before calling this tool, ask the user for: the data stream name, the data stream field names to unmap, " +
-    "the DMO name, and the DMO field names to unmap. " +
-    "Uses DELETE /ssot/data-model-object-mappings/{objectSourceTargetMapDeveloperName}/field-mappings.",
+    "Remove specific field mappings from a DMO mapping in Data Cloud. " +
+    "WORKFLOW: (1) Call get_dmo_mapping with the target DMO developer name to retrieve the existing " +
+    "field mappings and their developerNames. " +
+    "(2) Identify the field mapping entries to remove by matching sourceFieldDeveloperName and targetFieldDeveloperName. " +
+    "(3) Call this tool with the sourceEntityDeveloperName and the matching field mapping entries " +
+    "(including their developerName). " +
+    "Do NOT use get_dmo_schema — it is not needed here. " +
+    "Uses DELETE /ssot/data-model-object-mappings/{sourceEntityDeveloperName}/field-mappings.",
   inputSchema: {
     type: "object" as const,
     properties: {
-      object_source_target_map_developer_name: {
+      source_entity_developer_name: {
         type: "string",
-        description: "Developer name of the objectSourceTargetMap (from get_dmo_mapping).",
+        description:
+          "Developer name of the source data stream entity (sourceEntityDeveloperName from the mapping creation payload, e.g. 'File_User_Profile__dll').",
       },
-      source_field_developer_names: {
+      field_mappings: {
         type: "array",
-        description: "Source data stream field developer names to remove.",
-        items: { type: "string" },
-        minItems: 1,
-      },
-      target_field_developer_names: {
-        type: "array",
-        description: "Target DMO field developer names to remove.",
-        items: { type: "string" },
+        description: "Field mapping entries to remove.",
+        items: {
+          type: "object",
+          properties: {
+            developer_name: {
+              type: "string",
+              description: "developerName of the field mapping (from get_dmo_mapping).",
+            },
+            source_field: { type: "string", description: "Source field developer name." },
+            target_field: { type: "string", description: "Target DMO field developer name." },
+          },
+          required: ["developer_name", "source_field", "target_field"],
+        },
         minItems: 1,
       },
     },
-    required: [
-      "object_source_target_map_developer_name",
-      "source_field_developer_names",
-      "target_field_developer_names",
-    ],
+    required: ["source_entity_developer_name", "field_mappings"],
   },
 };
 
@@ -58,19 +72,22 @@ export async function handleRemoveDmoFieldMapping(
   input: RemoveDmoFieldMappingInput
 ): Promise<string> {
   await deleteDmoFieldMappings({
-    objectSourceTargetMapDeveloperName: input.object_source_target_map_developer_name,
-    sourceFieldDeveloperNames: input.source_field_developer_names,
-    targetFieldDeveloperNames: input.target_field_developer_names,
+    sourceEntityDeveloperName: input.source_entity_developer_name,
+    fieldMappings: input.field_mappings.map((f) => ({
+      developerName: f.developer_name,
+      sourceFieldDeveloperName: f.source_field,
+      targetFieldDeveloperName: f.target_field,
+    })),
   });
 
-  const removedLines = input.source_field_developer_names
-    .map((src, i) => `  • ${src} → ${input.target_field_developer_names[i] ?? "(n/a)"}`)
+  const removedLines = input.field_mappings
+    .map((f) => `  • ${f.source_field} → ${f.target_field} (${f.developer_name})`)
     .join("\n");
 
   return [
-    `Successfully removed ${input.source_field_developer_names.length} field mapping(s):`,
+    `Successfully removed ${input.field_mappings.length} field mapping(s):`,
     ``,
-    `**Mapping object:** \`${input.object_source_target_map_developer_name}\``,
+    `**Source entity:** \`${input.source_entity_developer_name}\``,
     ``,
     removedLines,
   ].join("\n");

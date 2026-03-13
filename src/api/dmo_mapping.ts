@@ -28,10 +28,15 @@ export interface FieldMappingPair {
   targetFieldDeveloperName: string;
 }
 
+export interface DeleteFieldMappingPair {
+  developerName: string;
+  sourceFieldDeveloperName: string;
+  targetFieldDeveloperName: string;
+}
+
 export interface DeleteMappingPayload {
-  objectSourceTargetMapDeveloperName: string;
-  sourceFieldDeveloperNames: string[];
-  targetFieldDeveloperNames: string[];
+  sourceEntityDeveloperName: string;
+  fieldMappings: DeleteFieldMappingPair[];
 }
 
 export interface ApplyMappingPayload {
@@ -65,17 +70,14 @@ export async function fetchDmoMapping(dmoDeveloperName: string): Promise<ObjectS
 
 export async function deleteDmoFieldMappings(payload: DeleteMappingPayload): Promise<void> {
   const client = await getDCClient();
-  const { objectSourceTargetMapDeveloperName, sourceFieldDeveloperNames, targetFieldDeveloperNames } = payload;
-  const url = `${DMO_MAPPING_PATH}/${encodeURIComponent(objectSourceTargetMapDeveloperName)}/field-mappings`;
+  const { sourceEntityDeveloperName, fieldMappings } = payload;
+  const url = `${DMO_MAPPING_PATH}/${encodeURIComponent(sourceEntityDeveloperName)}/field-mappings`;
 
   console.error(`[dmo_mapping] DELETE ${client.defaults.baseURL}${url}`);
 
   try {
     const response = await client.delete(url, {
-      data: {
-        sourceFieldDeveloperNames,
-        targetFieldDeveloperNames,
-      },
+      data: { fieldMappings },
     });
     console.error(`[dmo_mapping] DELETE status: ${response.status}`);
   } catch (err) {

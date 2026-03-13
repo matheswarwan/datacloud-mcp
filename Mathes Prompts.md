@@ -269,6 +269,14 @@ When a user wants to remove DMO mapping, ask them for the details including, wha
  
 Documentation: https://developer.salesforce.com/docs/data/connectapi/references/spec#tag/Data-Model-Objects/paths/~1ssot~1data-model-object-mappings~1%7BobjectSourceTargetMapDeveloperName%7D~1field-mappings/delete
  
+# 9 Refresh / publish segmetns 
+
+When a user asks for a segment to be refreshed/ published, take the segment ID from get semgnets function, and make a post call to below url with segment ID in it. Also, based on API response, return success or failure messages with details.
+
+`POST https://{dne_cdpInstanceUrl}/services/data/v{version}/ssot/segments/{segmentId}/actions/publish`
+
+https://developer.salesforce.com/docs/data/connectapi/references/spec#tag/Segments/paths/~1ssot~1segments~1%7BsegmentId%7D~1actions~1publish/post
+
 # Notes: 
 
 1. When creating sql for segments, use these rules - https://developer.salesforce.com/docs/data/connectapi/guide/features_cdp_dbt_validations.html

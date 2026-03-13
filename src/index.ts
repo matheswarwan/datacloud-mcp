@@ -17,6 +17,11 @@ import {
   GetSegmentsInputSchema,
   handleGetSegments,
 } from "./tools/get_segments.js";
+import {
+  PUBLISH_SEGMENT_TOOL,
+  PublishSegmentInputSchema,
+  handlePublishSegment,
+} from "./tools/publish_segment.js";
 
 // ── DMO schema tool ───────────────────────────────────────────────────────────
 import {
@@ -83,6 +88,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
   tools: [
     GET_DATA_STREAMS_TOOL,
     GET_SEGMENTS_TOOL,
+    PUBLISH_SEGMENT_TOOL,
     GET_DMO_SCHEMA_TOOL,
     GET_DMO_MAPPING_TOOL,
     PROPOSE_DMO_FIELD_MAPPING_TOOL,
@@ -109,6 +115,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     if (name === "get_segments") {
       const input = GetSegmentsInputSchema.parse(args ?? {});
       const text = await handleGetSegments(input);
+      return { content: [{ type: "text", text }] };
+    }
+
+    if (name === "publish_segment") {
+      const input = PublishSegmentInputSchema.parse(args ?? {});
+      const text = await handlePublishSegment(input);
       return { content: [{ type: "text", text }] };
     }
 
