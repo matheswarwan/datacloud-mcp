@@ -277,6 +277,109 @@ When a user asks for a segment to be refreshed/ published, take the segment ID f
 
 https://developer.salesforce.com/docs/data/connectapi/references/spec#tag/Segments/paths/~1ssot~1segments~1%7BsegmentId%7D~1actions~1publish/post
 
+#10 Data Transfers - Get all or single 
+
+Let's work on data transformers. We should be able to get one or many data transformers using below endpoint. 
+
+endpoints:
+ GET /ssot/data-transforms
+ GET /ssot/data-transforms/{dataTransformNameOrId}
+
+Dev docs: 
+https://developer.salesforce.com/docs/data/connectapi/references/spec#tag/Data-Transforms/paths/~1ssot~1data-transforms/get
+
+#11 Data Transformers - Create / Update 
+
+Let's create or update data transformers.
+
+Endpoints:
+
+Create: POST https://{dne_cdpInstanceUrl}/services/data/v{version}/ssot/data-transforms
+Dev doc: https://developer.salesforce.com/docs/data/connectapi/references/spec#tag/Data-Transforms/paths/~1ssot~1data-transforms/get
+Update: PUT https://{dne_cdpInstanceUrl}/services/data/v{version}/ssot/data-transforms/{dataTransformNameOrId}
+Dev doc: https://developer.salesforce.com/docs/data/connectapi/references/spec#tag/Data-Transforms/paths/~1ssot~1data-transforms~1%7BdataTransformNameOrId%7D/put
+
+type: STREAMING or BATCH
+definition.type: SQL 
+definition.expression: the SQL expression 
+label / name : user provided or bot decided 
+
+`{
+  "definition": {
+    "expression": "SELECT\nAccount_Home__dll.Id__c  as Id__c, '***' as Name__c FROM Account_Home__dll",
+    "targetDlo": "Account_Home_Annon__dll",
+    "type": "SQL",
+    "version": "63.0"
+  },
+  "label": "AccountAnnon",
+  "name": "AccountAnnon",
+  "type": "STREAMING"
+}`
+
+#12 Update create / update data transformer function
+
+Are you able to modify the create / update data transformer functions to retry with STL payload ? Example below. 
+
+`{
+  "definition": {
+    "nodes": {
+      "LOAD_DATASET0": {
+        "action": "load",
+        "parameters": {
+          "dataset": {
+            "name": "Account_Home__dll",
+            "type": "dataLakeObject"
+          },
+          "fields": [
+            "Id__c"
+          ],
+          "sampleDetails": {
+            "sortBy": [],
+            "type": "TopN"
+          }
+        },
+        "sources": []
+      },
+      "OUTPUT0": {
+        "action": "outputD360",
+        "parameters": {
+          "fieldsMappings": [
+            {
+              "sourceField": "Id__c",
+              "targetField": "Id__c"
+            }
+          ],
+          "name": "Account_Home_Clean__dll",
+          "type": "dataLakeObject"
+        },
+        "sources": [
+          "LOAD_DATASET0"
+        ]
+      }
+    },
+    "type": "STL",
+    "version": "56.0"
+  },
+  "label": "Batch Account Cleaning",
+  "name": "BatchAccountCleaning",
+  "type": "BATCH"
+}`
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # Notes: 
 
 1. When creating sql for segments, use these rules - https://developer.salesforce.com/docs/data/connectapi/guide/features_cdp_dbt_validations.html
+
+2. Mathes TODO: Get dmo schema gets often called and kills the conversation with message overload

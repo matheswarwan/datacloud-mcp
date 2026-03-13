@@ -50,6 +50,18 @@ import {
   handleRemoveDmoFieldMapping,
 } from "./tools/remove_dmo_field_mapping.js";
 
+// ── Data Transforms tools ─────────────────────────────────────────────────────
+import {
+  GET_DATA_TRANSFORMS_TOOL,
+  GetDataTransformsInputSchema,
+  handleGetDataTransforms,
+} from "./tools/get_data_transforms.js";
+import {
+  UPSERT_DATA_TRANSFORM_TOOL,
+  UpsertDataTransformInputSchema,
+  handleUpsertDataTransform,
+} from "./tools/upsert_data_transform.js";
+
 // ── Calculated Insights tools ─────────────────────────────────────────────────
 import {
   GET_CALCULATED_INSIGHTS_TOOL,
@@ -94,6 +106,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     PROPOSE_DMO_FIELD_MAPPING_TOOL,
     APPLY_DMO_FIELD_MAPPING_TOOL,
     REMOVE_DMO_FIELD_MAPPING_TOOL,
+    GET_DATA_TRANSFORMS_TOOL,
+    UPSERT_DATA_TRANSFORM_TOOL,
     GET_CALCULATED_INSIGHTS_TOOL,
     PROPOSE_CI_SQL_TOOL,
     CREATE_CALCULATED_INSIGHT_TOOL,
@@ -151,6 +165,18 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     if (name === "remove_dmo_field_mapping") {
       const input = RemoveDmoFieldMappingInputSchema.parse(args ?? {});
       const text = await handleRemoveDmoFieldMapping(input);
+      return { content: [{ type: "text", text }] };
+    }
+
+    if (name === "get_data_transforms") {
+      const input = GetDataTransformsInputSchema.parse(args ?? {});
+      const text = await handleGetDataTransforms(input);
+      return { content: [{ type: "text", text }] };
+    }
+
+    if (name === "upsert_data_transform") {
+      const input = UpsertDataTransformInputSchema.parse(args ?? {});
+      const text = await handleUpsertDataTransform(input);
       return { content: [{ type: "text", text }] };
     }
 
