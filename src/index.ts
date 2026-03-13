@@ -39,6 +39,11 @@ import {
   ApplyDmoFieldMappingInputSchema,
   handleApplyDmoFieldMapping,
 } from "./tools/apply_dmo_field_mapping.js";
+import {
+  REMOVE_DMO_FIELD_MAPPING_TOOL,
+  RemoveDmoFieldMappingInputSchema,
+  handleRemoveDmoFieldMapping,
+} from "./tools/remove_dmo_field_mapping.js";
 
 // ── Calculated Insights tools ─────────────────────────────────────────────────
 import {
@@ -82,6 +87,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     GET_DMO_MAPPING_TOOL,
     PROPOSE_DMO_FIELD_MAPPING_TOOL,
     APPLY_DMO_FIELD_MAPPING_TOOL,
+    REMOVE_DMO_FIELD_MAPPING_TOOL,
     GET_CALCULATED_INSIGHTS_TOOL,
     PROPOSE_CI_SQL_TOOL,
     CREATE_CALCULATED_INSIGHT_TOOL,
@@ -127,6 +133,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     if (name === "apply_dmo_field_mapping") {
       const input = ApplyDmoFieldMappingInputSchema.parse(args ?? {});
       const text = await handleApplyDmoFieldMapping(input);
+      return { content: [{ type: "text", text }] };
+    }
+
+    if (name === "remove_dmo_field_mapping") {
+      const input = RemoveDmoFieldMappingInputSchema.parse(args ?? {});
+      const text = await handleRemoveDmoFieldMapping(input);
       return { content: [{ type: "text", text }] };
     }
 

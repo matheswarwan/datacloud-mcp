@@ -257,6 +257,18 @@ Documentation: https://developer.salesforce.com/docs/data/connectapi/references/
   ]
 }`
 
+#7 MCP deploymnet 
+
+create in instruction file and prepare the project to publish it in smithery.ai
+
+#8 Update DMO mapping 
+
+When a user wants to remove DMO mapping, ask them for the details including, what's the data stream and the data stream field names. And the DMO name and DMO field names.. and then perform below 'DELETE' request to remove the specificed mapping.
+
+`https://{dne_cdpInstanceUrl}/services/data/v{version}/ssot/data-model-object-mappings/{objectSourceTargetMapDeveloperName}/field-mappings`
+ 
+Documentation: https://developer.salesforce.com/docs/data/connectapi/references/spec#tag/Data-Model-Objects/paths/~1ssot~1data-model-object-mappings~1%7BobjectSourceTargetMapDeveloperName%7D~1field-mappings/delete
+ 
 # Notes: 
 
 1. When creating sql for segments, use these rules - https://developer.salesforce.com/docs/data/connectapi/guide/features_cdp_dbt_validations.html

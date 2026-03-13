@@ -1,0 +1,67 @@
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    required:
+      - sfClientId
+      - sfLoginUrl
+    properties:
+      sfAuthMethod:
+        type: string
+        title: Auth Method
+        description: "Authentication flow to use: client_credentials (default), jwt (server-to-server), or oauth_code (browser login)"
+        default: client_credentials
+        enum:
+          - client_credentials
+          - jwt
+          - oauth_code
+      sfClientId:
+        type: string
+        title: Salesforce Client ID
+        description: Consumer key from your Salesforce Connected App (Setup → App Manager → your app → Consumer Key)
+      sfLoginUrl:
+        type: string
+        title: Salesforce Login URL
+        description: "Your org's My Domain URL — e.g. https://yourorg.my.salesforce.com"
+      sfClientSecret:
+        type: string
+        title: Salesforce Client Secret
+        description: Consumer secret — required for client_credentials and oauth_code flows
+      sfUsername:
+        type: string
+        title: Salesforce Username
+        description: Your Salesforce login email — required for client_credentials and jwt flows
+      sfPassword:
+        type: string
+        title: Salesforce Password
+        description: Your Salesforce password — required for client_credentials flow
+      sfPrivateKeyPath:
+        type: string
+        title: Private Key Path
+        description: Absolute path to your server.key file — required for jwt flow only
+      sfCallbackPort:
+        type: number
+        title: OAuth Callback Port
+        description: Local port for the OAuth redirect (oauth_code flow only, default 3456)
+        default: 3456
+      tokenExpiryBuffer:
+        type: number
+        title: Token Expiry Buffer (seconds)
+        description: Re-authenticate this many seconds before the token expires (default 300)
+        default: 300
+  commandFunction: |-
+    (config) => ({
+      command: "node",
+      args: ["dist/index.js"],
+      env: {
+        SF_AUTH_METHOD: config.sfAuthMethod || "client_credentials",
+        SF_CLIENT_ID: config.sfClientId,
+        SF_LOGIN_URL: config.sfLoginUrl,
+        SF_CLIENT_SECRET: config.sfClientSecret,
+        SF_USERNAME: config.sfUsername,
+        SF_PASSWORD: config.sfPassword,
+        SF_PRIVATE_KEY_PATH: config.sfPrivateKeyPath,
+        SF_CALLBACK_PORT: config.sfCallbackPort ? String(config.sfCallbackPort) : undefined,
+        TOKEN_EXPIRY_BUFFER: config.tokenExpiryBuffer ? String(config.tokenExpiryBuffer) : undefined,
+      }
+    })

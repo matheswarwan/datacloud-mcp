@@ -28,6 +28,12 @@ export interface FieldMappingPair {
   targetFieldDeveloperName: string;
 }
 
+export interface DeleteMappingPayload {
+  objectSourceTargetMapDeveloperName: string;
+  sourceFieldDeveloperNames: string[];
+  targetFieldDeveloperNames: string[];
+}
+
 export interface ApplyMappingPayload {
   objectSourceTargetMapDeveloperName: string;
   sourceEntityDeveloperName: string;
@@ -52,6 +58,34 @@ export async function fetchDmoMapping(dmoDeveloperName: string): Promise<ObjectS
         ? JSON.stringify(axiosErr.response.data)
         : axiosErr.message;
       throw new Error(`Failed to fetch DMO mapping (HTTP ${status ?? "unknown"}): ${detail}`);
+    }
+    throw err;
+  }
+}
+
+export async function deleteDmoFieldMappings(payload: DeleteMappingPayload): Promise<void> {
+  const client = await getDCClient();
+  const { objectSourceTargetMapDeveloperName, sourceFieldDeveloperNames, targetFieldDeveloperNames } = payload;
+  const url = `${DMO_MAPPING_PATH}/${encodeURIComponent(objectSourceTargetMapDeveloperName)}/field-mappings`;
+
+  console.error(`[dmo_mapping] DELETE ${client.defaults.baseURL}${url}`);
+
+  try {
+    const response = await client.delete(url, {
+      data: {
+        sourceFieldDeveloperNames,
+        targetFieldDeveloperNames,
+      },
+    });
+    console.error(`[dmo_mapping] DELETE status: ${response.status}`);
+  } catch (err) {
+    if ((err as { isAxiosError?: boolean }).isAxiosError) {
+      const axiosErr = err as { response?: { data?: unknown; status?: number }; message: string };
+      const status = axiosErr.response?.status;
+      const detail = axiosErr.response?.data
+        ? JSON.stringify(axiosErr.response.data)
+        : axiosErr.message;
+      throw new Error(`Failed to delete DMO field mappings (HTTP ${status ?? "unknown"}): ${detail}`);
     }
     throw err;
   }
