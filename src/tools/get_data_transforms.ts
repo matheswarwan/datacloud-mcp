@@ -1,11 +1,21 @@
 import { z } from "zod";
-import { fetchDataTransforms, fetchDataTransform, DataTransform } from "../api/data_transforms.js";
+import {
+  fetchDataTransforms,
+  fetchDataTransform,
+  fetchDataTransformRunHistory,
+  fetchDataTransformSchedule,
+  DataTransform,
+} from "../api/data_transforms.js";
 
 export const GetDataTransformsInputSchema = z.object({
   name_or_id: z
     .string()
     .optional()
     .describe("Name or ID of a specific data transform to retrieve. Omit to list all."),
+  action: z
+    .enum(["details", "run-history", "schedule"])
+    .optional()
+    .describe("Action: 'details' (default) to get transform info, 'run-history' to list run history, 'schedule' to get the schedule."),
   limit: z
     .number()
     .int()
@@ -22,6 +32,7 @@ export const GET_DATA_TRANSFORMS_TOOL = {
   description:
     "List all data transforms or retrieve a single data transform by name or ID. " +
     "Use without arguments to list all, or provide name_or_id to get details for one. " +
+    "Use action='run-history' to view run history, action='schedule' to see the schedule. " +
     "Uses GET /ssot/data-transforms or GET /ssot/data-transforms/{nameOrId}.",
   inputSchema: {
     type: "object" as const,
@@ -29,6 +40,11 @@ export const GET_DATA_TRANSFORMS_TOOL = {
       name_or_id: {
         type: "string",
         description: "Name or ID of a specific data transform. Omit to list all.",
+      },
+      action: {
+        type: "string",
+        enum: ["details", "run-history", "schedule"],
+        description: "Action: 'details' (default), 'run-history', or 'schedule'.",
       },
       limit: {
         type: "number",
@@ -57,6 +73,17 @@ function formatTransform(t: DataTransform): string {
 }
 
 export async function handleGetDataTransforms(input: GetDataTransformsInput): Promise<string> {
+  if (input.name_or_id && input.action === "run-history") {
+    const history = await fetchDataTransformRunHistory(input.name_or_id, input.limit ?? 100);
+    if (history.length === 0) return `No run history found for data transform "${input.name_or_id}".`;
+    return `Run history for "${input.name_or_id}" (${history.length} entry/entries):\n\n${history.map((h) => JSON.stringify(h, null, 2)).join("\n\n")}`;
+  }
+
+  if (input.name_or_id && input.action === "schedule") {
+    const schedule = await fetchDataTransformSchedule(input.name_or_id);
+    return `Schedule for data transform "${input.name_or_id}":\n\n${JSON.stringify(schedule, null, 2)}`;
+  }
+
   if (input.name_or_id) {
     const transform = await fetchDataTransform(input.name_or_id);
     return `Data transform details:\n\n${formatTransform(transform)}`;

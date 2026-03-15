@@ -1,4 +1,4 @@
-# datacloud-mcp
+# salesforce-datacloud-mcp
 
 MCP server for **Salesforce Data Cloud (Data 360)**. Connects Claude Desktop (or any MCP client) to your Data Cloud org so you can explore data streams, Data Model Objects (DMOs), segments, and calculated insights — and create new ones — through natural language.
 
@@ -8,10 +8,14 @@ MCP server for **Salesforce Data Cloud (Data 360)**. Connects Claude Desktop (or
 |------|-------------|
 | `get_data_streams` | List all data streams with status and connector type |
 | `get_segments` | List all segments in the org |
+| `publish_segment` | Publish a segment to an activation target |
 | `get_dmo_schema` | Inspect fields on one or more DMOs (filterable by name) |
 | `get_dmo_mapping` | Show how a data stream's fields map to a DMO |
 | `propose_dmo_field_mapping` | AI-suggested field mappings between a stream and a DMO |
 | `apply_dmo_field_mapping` | Write a proposed field mapping back to Data Cloud |
+| `remove_dmo_field_mapping` | Remove a field mapping from a DMO |
+| `get_data_transforms` | List all data transforms |
+| `upsert_data_transform` | Create or update a data transform |
 | `get_calculated_insights` | List all calculated insights and their SQL |
 | `propose_ci_sql` | Generate SQL for a new calculated insight from a description |
 | `create_calculated_insight` | Create a new calculated insight in the org |
@@ -19,50 +23,48 @@ MCP server for **Salesforce Data Cloud (Data 360)**. Connects Claude Desktop (or
 
 ## Prerequisites
 
-You need a Salesforce **Connected App** with:
-- OAuth scope: `api`
-- OAuth Policies → Permitted Users: "All users may self-authorize"
-- The flow you intend to use enabled (see Auth Methods below)
+A Salesforce **Connected App** with OAuth scope `api` and the flow you intend to use enabled (see Auth Methods below).
 
 ## Auth Methods
 
 ### client_credentials (default)
-Headless machine-to-machine auth. Enable "Client Credentials Flow" on the Connected App.
 
-Required fields: `sfClientId`, `sfClientSecret`, `sfUsername`, `sfPassword`, `sfLoginUrl`
+Headless machine-to-machine auth. Enable **Client Credentials Flow** on the Connected App.
 
-### jwt (server-to-server)
-JWT Bearer flow. The user must be pre-authorised on the Connected App. Generate a key pair and upload the certificate to the app.
+Required env vars: `SF_CLIENT_ID`, `SF_CLIENT_SECRET`, `SF_USERNAME`, `SF_PASSWORD`, `SF_LOGIN_URL`
 
-Required fields: `sfClientId`, `sfUsername`, `sfLoginUrl`, `sfPrivateKeyPath`
+### jwt
 
-### oauth_code (browser login)
-Interactive OAuth. The server opens a local HTTP listener; you log in via browser. Callback URL on the Connected App must include `http://localhost:3456/callback`.
+JWT Bearer flow. The user must be pre-authorised on the Connected App. Generate a key pair and upload the certificate to the Connected App.
 
-Required fields: `sfClientId`, `sfClientSecret`, `sfLoginUrl`
+Required env vars: `SF_CLIENT_ID`, `SF_USERNAME`, `SF_LOGIN_URL`, and either:
+- `SF_PRIVATE_KEY` — PEM content as a string (recommended for hosted/cloud environments)
+- `SF_PRIVATE_KEY_PATH` — absolute path to the `.key` file (local use only)
 
 ## Configuration
 
-| Field | Required | Description |
-|-------|----------|-------------|
-| `sfClientId` | Yes | Consumer key from the Connected App |
-| `sfLoginUrl` | Yes | Your org's My Domain URL (e.g. `https://yourorg.my.salesforce.com`) |
-| `sfAuthMethod` | No | `client_credentials` (default), `jwt`, or `oauth_code` |
-| `sfClientSecret` | Conditional | Required for `client_credentials` and `oauth_code` |
-| `sfUsername` | Conditional | Required for `client_credentials` and `jwt` |
-| `sfPassword` | Conditional | Required for `client_credentials` |
-| `sfPrivateKeyPath` | Conditional | Absolute path to `server.key` — required for `jwt` |
-| `sfCallbackPort` | No | OAuth redirect port (default `3456`) — `oauth_code` only |
-| `tokenExpiryBuffer` | No | Seconds before expiry to refresh the token (default `300`) |
+| Env var | Required | Description |
+|---------|----------|-------------|
+| `SF_CLIENT_ID` | Yes | Consumer key from the Connected App |
+| `SF_LOGIN_URL` | Yes | Your org's My Domain URL (e.g. `https://yourorg.my.salesforce.com`) |
+| `SF_AUTH_METHOD` | No | `client_credentials` (default) or `jwt` |
+| `SF_CLIENT_SECRET` | For `client_credentials` | Consumer secret from the Connected App |
+| `SF_USERNAME` | For `client_credentials` + `jwt` | Salesforce username |
+| `SF_PASSWORD` | For `client_credentials` | Salesforce password |
+| `SF_PRIVATE_KEY` | For `jwt` | PEM private key content |
+| `SF_PRIVATE_KEY_PATH` | For `jwt` (local) | Absolute path to `.key` file |
+| `TOKEN_EXPIRY_BUFFER` | No | Seconds before expiry to refresh token (default `300`) |
 
-## Manual setup (Claude Desktop)
+## Setup (Claude Desktop — npx)
+
+No install needed. Add to `claude_desktop_config.json`:
 
 ```json
 {
   "mcpServers": {
-    "datacloud": {
-      "command": "node",
-      "args": ["/absolute/path/to/MCP-DC/dist/index.js"],
+    "salesforce-datacloud-mcp": {
+      "command": "npx",
+      "args": ["-y", "salesforce-datacloud-mcp"],
       "env": {
         "SF_AUTH_METHOD": "client_credentials",
         "SF_CLIENT_ID": "3MVG9...",
@@ -76,7 +78,28 @@ Required fields: `sfClientId`, `sfClientSecret`, `sfLoginUrl`
 }
 ```
 
-Build first: `npm install && npm run build`
+## Setup (Cloudflare Workers — remote HTTP)
+
+Deploy your own instance to Cloudflare Workers and connect via HTTP. Credentials are passed as request headers so they stay on your machine.
+
+```json
+{
+  "mcpServers": {
+    "salesforce-datacloud-mcp": {
+      "command": "npx",
+      "args": [
+        "-y", "mcp-remote",
+        "https://your-worker.workers.dev",
+        "--header", "X-SF-Client-Id:YOUR_CLIENT_ID",
+        "--header", "X-SF-Client-Secret:YOUR_CLIENT_SECRET",
+        "--header", "X-SF-Username:your.user@example.com",
+        "--header", "X-SF-Password:yourpassword",
+        "--header", "X-SF-Login-Url:https://yourorg.my.salesforce.com"
+      ]
+    }
+  }
+}
+```
 
 ## Example prompts
 
@@ -93,10 +116,6 @@ Suggest how these map to fields on the UnifiedIndividual__dlm DMO.
 Create a calculated insight that counts active members per segment.
 ```
 
-## Startup behaviour
-
-On first launch the server fetches and caches all DMO metadata and calculated insights from your org. This takes a few seconds depending on how many DMOs exist. All subsequent tool calls use the in-memory cache and respond instantly.
-
 ## Troubleshooting
 
 | Symptom | Likely cause |
@@ -104,5 +123,5 @@ On first launch the server fetches and caches all DMO metadata and calculated in
 | `invalid_client_credentials` | Wrong `SF_CLIENT_ID` or `SF_CLIENT_SECRET` |
 | `invalid_grant` | Wrong `SF_USERNAME` / `SF_PASSWORD`, or wrong `SF_LOGIN_URL` |
 | `Data Cloud token exchange failed` | Connected App not enabled for Data Cloud; check OAuth scopes |
-| `HTTP 404` on data streams | API version mismatch — verify `v65.0` is available in your org |
+| `HTTP 404` on data streams | API version mismatch — verify `v63.0` is available in your org |
 | Tool not visible in Claude | Config JSON syntax error, or Claude Desktop not restarted |

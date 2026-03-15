@@ -1,252 +1,133 @@
-# Todo prompts 
+# Todo Prompts
 
-## 1
+---
 
-Can you add an option so that when a user connects this mcp server to their agent, provide them option to authenticate using OAuth 2.0 Authorization Code where the 
+## #1 — OAuth 2.0 Auth Code + JWT Bearer Flow
 
-    1. MCP server redirects user to Salesforce authorization page.
-    2. User logs in and consents.
-    3. Salesforce returns an authorization code.
-    4. MCP server exchanges the code for: access token & refresh token
-    5. You then use the access token to call Data Cloud APIs.
+Add support for two auth strategies when connecting the MCP server:
 
-Or if they want ot use JWT Bearer Flow Server-to-Server - where we can instruct them to 
+**Option A — OAuth 2.0 Authorization Code Flow:**
+1. MCP server redirects user to the Salesforce authorization page.
+2. User logs in and consents.
+3. Salesforce returns an authorization code.
+4. MCP server exchanges the code for an access token & refresh token.
+5. Use the access token to call Data Cloud APIs.
 
+**Option B — JWT Bearer Flow (Server-to-Server):**
 1. Create a Connected App in Salesforce.
-and other instructions etc.,
+2. Follow setup instructions to generate a private key and certificate.
+3. MCP server signs a JWT assertion and exchanges it for an access token.
 
-` untested `
+> `untested`
 
-## 2
+---
 
-For Data stream creation, read through this document and implement approrpirate by following this flow/ strcture 
+## #2 — Data Stream Creation
 
-https://developer.salesforce.com/docs/data/connectapi/guide/dmo-use-case.html
+For data stream creation, implement the appropriate flow/structure by following:
+[DMO Use Case Guide](https://developer.salesforce.com/docs/data/connectapi/guide/dmo-use-case.html)
 
-## 3 
+---
 
-Fix response for 'Get calculated insights' 'what are the calculated insights available'
+## #3 — Fix `get_calculated_insights` Response
 
-`
+Fix the response for **"What are the calculated insights available?"**
+
+**Actual API response shape:**
+```json
 {
-    "collection": {
-        "count": 3,
-        "currentPageToken": "eyJvZiI6MCwiYnMiOjI1fQ==",
-        "currentPageUrl": "/services/data/v65.0/ssot/calculated-insights?batchSize=25&offset=0&pageToken=eyJvZiI6MCwiYnMiOjI1fQ%3D%3D",
-        "items": [
-            {
-                "apiName": "Life_Time_Order_Value_history__cio",
-                "calculatedInsightStatus": "ACTIVE",
-                "creationType": "Custom",
-                "dataSpace": "default",
-                "definitionStatus": "IN_USE",
-                "definitionType": "HISTORY_METRIC",
-                "description": "Tracks the history of CI Life Time Order Value",
-                "dimensions": [
-                    {
-                        "apiName": "customer_id__c",
-                        "creationType": "Custom",
-                        "dataSource": {
-                            "sourceApiName": "ssot__GrandTotalAmount__c",
-                            "type": "DATA_MODEL"
-                        },
-                        "dataType": "Text",
-                        "dateGranularity": null,
-                        "displayName": "customer_id",
-                        "fieldRole": "DIMENSION",
-                        "formula": "ssot__SalesOrder__dlm.ssot__SoldToCustomerId__c"
-                    },
-                    {
-                        "apiName": "history_capture_ts__c",
-                        "creationType": "Custom",
-                        "dataSource": {
-                            "sourceApiName": "ssot__GrandTotalAmount__c",
-                            "type": "DATA_MODEL"
-                        },
-                        "dataType": "DateTime",
-                        "dateGranularity": "DAY",
-                        "displayName": "history_capture_ts",
-                        "fieldRole": "DIMENSION",
-                        "formula": "[placeholder]"
-                    }
-                ],
-                "displayName": "Life Time Order Value History",
-                "expression": "SELECT\n  SUM(ssot__SalesOrder__dlm.ssot__GrandTotalAmount__c) AS total_sales__c,\n  ssot__SalesOrder__dlm.ssot__SoldToCustomerId__c AS customer_id__c\nFROM ssot__SalesOrder__dlm\nGROUP BY customer_id__c",
-                "isEnabled": true,
-                "lastCalcInsightStatusDateTime": "2026-03-04T21:17:02.000Z",
-                "lastCalcInsightStatusErrorCode": null,
-                "lastRunDateTime": "2026-03-08T19:08:12.000Z",
-                "lastRunStatus": "SUCCESS",
-                "lastRunStatusDateTime": "2026-03-08T19:09:52.000Z",
-                "lastRunStatusErrorCode": null,
-                "measures": [
-                    {
-                        "apiName": "total_sales__c",
-                        "creationType": "Custom",
-                        "dataSource": {
-                            "sourceApiName": "ssot__GrandTotalAmount__c",
-                            "type": "DATA_MODEL"
-                        },
-                        "dataType": "Number",
-                        "displayName": "total_sales",
-                        "fieldAggregationType": "AGGREGATABLE",
-                        "fieldRole": "MEASURE",
-                        "formula": "SUM(ssot__SalesOrder__dlm.ssot__GrandTotalAmount__c)"
-                    }
-                ],
-                "publishScheduleEndDate": null,
-                "publishScheduleInterval": "SYSTEM_MANAGED",
-                "publishScheduleStartDateTime": null,
-                "subType": null
-            }..
-        ],
-        "nextPageToken": null,
-        "nextPageUrl": null,
-        "previousPageToken": null,
-        "previousPageUrl": null,
-        "total": 3
-    }
+  "collection": {
+    "count": 3,
+    "currentPageToken": "eyJvZiI6MCwiYnMiOjI1fQ==",
+    "currentPageUrl": "/services/data/v65.0/ssot/calculated-insights?batchSize=25&offset=0&pageToken=...",
+    "items": [
+      {
+        "apiName": "Life_Time_Order_Value_history__cio",
+        "calculatedInsightStatus": "ACTIVE",
+        "creationType": "Custom",
+        "dataSpace": "default",
+        "definitionStatus": "IN_USE",
+        "definitionType": "HISTORY_METRIC",
+        "description": "Tracks the history of CI Life Time Order Value",
+        "dimensions": [...],
+        "displayName": "Life Time Order Value History",
+        "expression": "SELECT ...",
+        "isEnabled": true,
+        "lastRunStatus": "SUCCESS",
+        "measures": [...],
+        "publishScheduleInterval": "SYSTEM_MANAGED"
+      }
+    ],
+    "nextPageToken": null,
+    "nextPageUrl": null,
+    "total": 3
+  }
 }
-`
+```
 
-March 13, 2026 
-#4 Update to Get DMO Schemas
+---
 
-When getting DMO schema, use offset which is a multiplier of 50. ie, only 50 records will be retreived in one request. When the project loads, load and store all the DMOs as one time activity.
+## #4 — Update `get_dmo_schema` (March 13, 2026)
 
-`services/data/v61.0//ssot/data-model-objects?offset=50`
+When fetching DMO schemas:
+- Use `offset` as a multiplier of 50 (only 50 records per request).
+- On server startup, load and store all DMOs as a one-time warm-up activity.
 
-#5 Get DMO Mapping 
+```
+GET /services/data/v61.0/ssot/data-model-objects?offset=50
+```
 
-Let's work on fetching DMO mapping. When required, provide the DMO name fetched from get DMO Schema and get their mapping. 
+---
 
-`/services/data/v61.0//ssot/data-model-object-mappings?dmoDeveloperName=ssot__Individual__dlm`
+## #5 — Get DMO Mapping
 
-Below is a sample response 
+Fetch DMO mapping. Accept a DMO name from `get_dmo_schema` and retrieve its mapping:
 
-`{
-    "objectSourceTargetMaps": [
+```
+GET /services/data/v61.0/ssot/data-model-object-mappings?dmoDeveloperName=ssot__Individual__dlm
+```
+
+**Sample response:**
+```json
+{
+  "objectSourceTargetMaps": [
+    {
+      "developerName": "File_User_Profile_map_Individual_1748408696560",
+      "fieldMappings": [
         {
-            "developerName": "File_User_Profile_map_Individual_1748408696560",
-            "fieldMappings": [
-                {
-                    "developerName": "COMPANY__c_fieldmap_ssot__CurrentEmployerName__c",
-                    "sourceFieldDeveloperName": "COMPANY__c",
-                    "targetFieldDeveloperName": "ssot__CurrentEmployerName__c"
-                },
-                {
-                    "developerName": "DataSource__c_fieldmap_ssot__DataSourceId__c",
-                    "sourceFieldDeveloperName": "DataSource__c",
-                    "targetFieldDeveloperName": "ssot__DataSourceId__c"
-                },
-                {
-                    "developerName": "POSITION__c_fieldmap_ssot__Occupation__c",
-                    "sourceFieldDeveloperName": "POSITION__c",
-                    "targetFieldDeveloperName": "ssot__Occupation__c"
-                },
-                {
-                    "developerName": "BUSINESSENTITYID__c_fieldmap_ssot__Id__c",
-                    "sourceFieldDeveloperName": "BUSINESSENTITYID__c",
-                    "targetFieldDeveloperName": "ssot__Id__c"
-                },
-                {
-                    "developerName": "KQ_BUSINESSENTITYID__c_fieldmap_KQ_Id__c",
-                    "sourceFieldDeveloperName": "KQ_BUSINESSENTITYID__c",
-                    "targetFieldDeveloperName": "KQ_Id__c"
-                },
-                {
-                    "developerName": "HOMEPAGEURL__c_fieldmap_ssot__WebSiteURL__c",
-                    "sourceFieldDeveloperName": "HOMEPAGEURL__c",
-                    "targetFieldDeveloperName": "ssot__WebSiteURL__c"
-                },
-                {
-                    "developerName": "FIRSTNAME__c_fieldmap_ssot__FirstName__c",
-                    "sourceFieldDeveloperName": "FIRSTNAME__c",
-                    "targetFieldDeveloperName": "ssot__FirstName__c"
-                },
-                {
-                    "developerName": "DataSourceObject__c_fieldmap_ssot__DataSourceObjectId__c",
-                    "sourceFieldDeveloperName": "DataSourceObject__c",
-                    "targetFieldDeveloperName": "ssot__DataSourceObjectId__c"
-                },
-                {
-                    "developerName": "LASTNAME__c_fieldmap_ssot__LastName__c",
-                    "sourceFieldDeveloperName": "LASTNAME__c",
-                    "targetFieldDeveloperName": "ssot__LastName__c"
-                },
-                {
-                    "developerName": "InternalOrganization__c_fieldmap_ssot__InternalOrganizationId__c",
-                    "sourceFieldDeveloperName": "InternalOrganization__c",
-                    "targetFieldDeveloperName": "ssot__InternalOrganizationId__c"
-                },
-                {
-                    "developerName": "COMPANY__c_fieldmap_ssot__GenderId__c",
-                    "sourceFieldDeveloperName": "COMPANY__c",
-                    "targetFieldDeveloperName": "ssot__GenderId__c"
-                },
-                {
-                    "developerName": "COMPANY__c_fieldmap_ssot__GenderIdentity__c",
-                    "sourceFieldDeveloperName": "COMPANY__c",
-                    "targetFieldDeveloperName": "ssot__GenderIdentity__c"
-                }
-            ],
-            "sourceEntityDeveloperName": "File_User_Profile__dll",
-            "status": "ACTIVE",
-            "targetEntityDeveloperName": "ssot__Individual__dlm"
-        },
-        {
-            "developerName": "File_User_Details_and_Activities_map_Individual_1748452267367",
-            "fieldMappings": [
-                {
-                    "developerName": "industry_name__c_fieldmap_Industry_Name__c",
-                    "sourceFieldDeveloperName": "industry_name__c",
-                    "targetFieldDeveloperName": "Industry_Name__c"
-                },
-                {
-                    "developerName": "DataSource__c_fieldmap_ssot__DataSourceId__c",
-                    "sourceFieldDeveloperName": "DataSource__c",
-                    "targetFieldDeveloperName": "ssot__DataSourceId__c"
-                },
-                {
-                    "developerName": "DataSourceObject__c_fieldmap_ssot__DataSourceObjectId__c",
-                    "sourceFieldDeveloperName": "DataSourceObject__c",
-                    "targetFieldDeveloperName": "ssot__DataSourceObjectId__c"
-                },
-                {
-                    "developerName": "id__c_fieldmap_ssot__Id__c",
-                    "sourceFieldDeveloperName": "id__c",
-                    "targetFieldDeveloperName": "ssot__Id__c"
-                },
-                {
-                    "developerName": "KQ_id__c_fieldmap_KQ_Id__c",
-                    "sourceFieldDeveloperName": "KQ_id__c",
-                    "targetFieldDeveloperName": "KQ_Id__c"
-                },
-                {
-                    "developerName": "InternalOrganization__c_fieldmap_ssot__InternalOrganizationId__c",
-                    "sourceFieldDeveloperName": "InternalOrganization__c",
-                    "targetFieldDeveloperName": "ssot__InternalOrganizationId__c"
-                }
-            ],
-            "sourceEntityDeveloperName": "File_User_Details_and_Activities__dll",
-            "status": "ACTIVE",
-            "targetEntityDeveloperName": "ssot__Individual__dlm"
+          "developerName": "COMPANY__c_fieldmap_ssot__CurrentEmployerName__c",
+          "sourceFieldDeveloperName": "COMPANY__c",
+          "targetFieldDeveloperName": "ssot__CurrentEmployerName__c"
         }
-    ]
+      ],
+      "sourceEntityDeveloperName": "File_User_Profile__dll",
+      "status": "ACTIVE",
+      "targetEntityDeveloperName": "ssot__Individual__dlm"
+    }
+  ]
 }
-`
+```
 
-#6 Create DMO Mapping 
+---
 
-When a user asks for DMO mapping to be performed, ask them for which data stream (you already have 'get data stream' function) and fetch that data stream's fields. Next, try to perform a mapping of data stream fields based on DMO you have in your memory. If matching field is found, ask the users to confirm and create those mapping by using below API. 
+## #6 — Create DMO Mapping
 
-Documentation: https://developer.salesforce.com/docs/data/connectapi/references/spec#tag/Data-Model-Objects/paths/~1ssot~1data-model-object-mappings~1%7BobjectSourceTargetMapDeveloperName%7D~1field-mappings~1%7BfieldSourceTargetMapDeveloperName%7D/patch 
+When a user asks to perform DMO mapping:
+1. Ask for which data stream (use `get_data_streams`).
+2. Fetch that data stream's fields.
+3. Propose matching fields against the DMO in memory.
+4. Ask the user to confirm, then create the mapping.
 
-(Ignore the title that says 'Delete' for patch request. Must be a typo and I've teted this)
+**API:** `PATCH` with field-mapping payload:
 
-` PATCH https://orgfarm-6cac2dc8f8-dev-ed.develop.my.salesforce.com/services/data/v61.0/ssot/data-model-object-mappings/File_User_Profile_map_Individual_1748408696560/field-mappings/ssot__Individual__dlm`
+```
+PATCH https://{org}/services/data/v61.0/ssot/data-model-object-mappings/{objectSourceTargetMapDeveloperName}/field-mappings/{fieldSourceTargetMapDeveloperName}
+```
 
-`{
+> Note: The docs label this as "Delete" — that's a typo. It's a `PATCH`. Tested and confirmed.
+
+```json
+{
   "sourceEntityDeveloperName": "File_User_Profile__dll",
   "targetEntityDeveloperName": "ssot__Individual__dlm",
   "fieldMapping": [
@@ -255,58 +136,78 @@ Documentation: https://developer.salesforce.com/docs/data/connectapi/references/
       "targetFieldDeveloperName": "ssot__GenderIdentity__c"
     }
   ]
-}`
+}
+```
 
-#7 MCP deploymnet 
+[API Docs](https://developer.salesforce.com/docs/data/connectapi/references/spec#tag/Data-Model-Objects/paths/~1ssot~1data-model-object-mappings~1%7BobjectSourceTargetMapDeveloperName%7D~1field-mappings~1%7BfieldSourceTargetMapDeveloperName%7D/patch)
 
-create in instruction file and prepare the project to publish it in smithery.ai
+---
 
-#8 Update DMO mapping 
+## #7 — MCP Deployment
 
-When a user wants to remove DMO mapping, ask them for the details including, what's the data stream and the data stream field names. And the DMO name and DMO field names.. and then perform below 'DELETE' request to remove the specificed mapping.
+Create an instruction file and prepare the project for publishing on [smithery.ai](https://smithery.ai).
 
-`https://{dne_cdpInstanceUrl}/services/data/v{version}/ssot/data-model-object-mappings/{objectSourceTargetMapDeveloperName}/field-mappings`
- 
-Documentation: https://developer.salesforce.com/docs/data/connectapi/references/spec#tag/Data-Model-Objects/paths/~1ssot~1data-model-object-mappings~1%7BobjectSourceTargetMapDeveloperName%7D~1field-mappings/delete
- 
-# 9 Refresh / publish segmetns 
+---
 
-When a user asks for a segment to be refreshed/ published, take the segment ID from get semgnets function, and make a post call to below url with segment ID in it. Also, based on API response, return success or failure messages with details.
+## #8 — Remove DMO Field Mapping
 
-`POST https://{dne_cdpInstanceUrl}/services/data/v{version}/ssot/segments/{segmentId}/actions/publish`
+When a user wants to remove a DMO mapping:
+1. Ask for the data stream name and field names.
+2. Ask for the DMO name and DMO field names.
+3. Issue a `DELETE` to remove the specified mapping.
 
-https://developer.salesforce.com/docs/data/connectapi/references/spec#tag/Segments/paths/~1ssot~1segments~1%7BsegmentId%7D~1actions~1publish/post
+```
+DELETE https://{dne_cdpInstanceUrl}/services/data/v{version}/ssot/data-model-object-mappings/{objectSourceTargetMapDeveloperName}/field-mappings
+```
 
-#10 Data Transfers - Get all or single 
+[API Docs](https://developer.salesforce.com/docs/data/connectapi/references/spec#tag/Data-Model-Objects/paths/~1ssot~1data-model-object-mappings~1%7BobjectSourceTargetMapDeveloperName%7D~1field-mappings/delete)
 
-Let's work on data transformers. We should be able to get one or many data transformers using below endpoint. 
+---
 
-endpoints:
- GET /ssot/data-transforms
- GET /ssot/data-transforms/{dataTransformNameOrId}
+## #9 — Refresh / Publish Segments
 
-Dev docs: 
-https://developer.salesforce.com/docs/data/connectapi/references/spec#tag/Data-Transforms/paths/~1ssot~1data-transforms/get
+When a user asks to refresh or publish a segment:
+1. Get the segment ID from `get_segments`.
+2. `POST` to the publish endpoint.
+3. Return success or failure message with details.
 
-#11 Data Transformers - Create / Update 
+```
+POST https://{dne_cdpInstanceUrl}/services/data/v{version}/ssot/segments/{segmentId}/actions/publish
+```
 
-Let's create or update data transformers.
+[API Docs](https://developer.salesforce.com/docs/data/connectapi/references/spec#tag/Segments/paths/~1ssot~1segments~1%7BsegmentId%7D~1actions~1publish/post)
 
-Endpoints:
+---
 
-Create: POST https://{dne_cdpInstanceUrl}/services/data/v{version}/ssot/data-transforms
-Dev doc: https://developer.salesforce.com/docs/data/connectapi/references/spec#tag/Data-Transforms/paths/~1ssot~1data-transforms/get
-Update: PUT https://{dne_cdpInstanceUrl}/services/data/v{version}/ssot/data-transforms/{dataTransformNameOrId}
-Dev doc: https://developer.salesforce.com/docs/data/connectapi/references/spec#tag/Data-Transforms/paths/~1ssot~1data-transforms~1%7BdataTransformNameOrId%7D/put
+## #10 — Data Transforms — Get
 
-type: STREAMING or BATCH
-definition.type: SQL 
-definition.expression: the SQL expression 
-label / name : user provided or bot decided 
+List or fetch a single data transform:
 
-`{
+```
+GET /ssot/data-transforms
+GET /ssot/data-transforms/{dataTransformNameOrId}
+```
+
+[API Docs](https://developer.salesforce.com/docs/data/connectapi/references/spec#tag/Data-Transforms/paths/~1ssot~1data-transforms/get)
+
+---
+
+## #11 — Data Transforms — Create / Update
+
+Create or update data transforms:
+
+```
+POST https://{dne_cdpInstanceUrl}/services/data/v{version}/ssot/data-transforms
+PUT  https://{dne_cdpInstanceUrl}/services/data/v{version}/ssot/data-transforms/{dataTransformNameOrId}
+```
+
+Key fields: `type` (`STREAMING` | `BATCH`), `definition.type` (`SQL`), `definition.expression`, `label`, `name`.
+
+**SQL payload example:**
+```json
+{
   "definition": {
-    "expression": "SELECT\nAccount_Home__dll.Id__c  as Id__c, '***' as Name__c FROM Account_Home__dll",
+    "expression": "SELECT Account_Home__dll.Id__c as Id__c, '***' as Name__c FROM Account_Home__dll",
     "targetDlo": "Account_Home_Annon__dll",
     "type": "SQL",
     "version": "63.0"
@@ -314,47 +215,37 @@ label / name : user provided or bot decided
   "label": "AccountAnnon",
   "name": "AccountAnnon",
   "type": "STREAMING"
-}`
+}
+```
 
-#12 Update create / update data transformer function
+---
 
-Are you able to modify the create / update data transformer functions to retry with STL payload ? Example below. 
+## #12 — Data Transforms — Retry with STL Payload
 
-`{
+Modify the create/update data transform functions to retry with an STL payload when SQL fails.
+
+**STL payload example:**
+```json
+{
   "definition": {
     "nodes": {
       "LOAD_DATASET0": {
         "action": "load",
         "parameters": {
-          "dataset": {
-            "name": "Account_Home__dll",
-            "type": "dataLakeObject"
-          },
-          "fields": [
-            "Id__c"
-          ],
-          "sampleDetails": {
-            "sortBy": [],
-            "type": "TopN"
-          }
+          "dataset": { "name": "Account_Home__dll", "type": "dataLakeObject" },
+          "fields": ["Id__c"],
+          "sampleDetails": { "sortBy": [], "type": "TopN" }
         },
         "sources": []
       },
       "OUTPUT0": {
         "action": "outputD360",
         "parameters": {
-          "fieldsMappings": [
-            {
-              "sourceField": "Id__c",
-              "targetField": "Id__c"
-            }
-          ],
+          "fieldsMappings": [{ "sourceField": "Id__c", "targetField": "Id__c" }],
           "name": "Account_Home_Clean__dll",
           "type": "dataLakeObject"
         },
-        "sources": [
-          "LOAD_DATASET0"
-        ]
+        "sources": ["LOAD_DATASET0"]
       }
     },
     "type": "STL",
@@ -363,23 +254,126 @@ Are you able to modify the create / update data transformer functions to retry w
   "label": "Batch Account Cleaning",
   "name": "BatchAccountCleaning",
   "type": "BATCH"
-}`
+}
+```
 
+---
 
+## #13 — Identity Resolution (IDR) Ruleset
 
+Get identity resolution rulesets:
 
+```
+GET https://{dne_cdpInstanceUrl}/services/data/v{version}/ssot/identity-resolutions
+GET https://{dne_cdpInstanceUrl}/services/data/v{version}/ssot/identity-resolutions/{developerName}
+```
 
+[API Docs](https://developer.salesforce.com/docs/data/connectapi/references/spec#tag/Identity-Resolutions)
 
+---
 
+## #14 — Get Data Spaces
 
+Get all data spaces (analogous to business units in SFMC). When listing resources (e.g. segments) and multiple data spaces exist, ask the user to choose.
 
+```
+GET https://{dne_cdpInstanceUrl}/services/data/v{version}/ssot/data-spaces
+```
 
+[API Docs](https://developer.salesforce.com/docs/data/connectapi/references/spec#tag/Data-Spaces/paths/~1ssot~1data-spaces/get)
 
+---
 
+## #15 — Get Data Lake Objects, Data Graphs, Data Actions, Data Action Targets
 
+### Data Lake Objects
 
-# Notes: 
+```
+GET https://{dne_cdpInstanceUrl}/services/data/v{version}/ssot/data-lake-objects
+GET https://{dne_cdpInstanceUrl}/services/data/v{version}/ssot/data-lake-objects/{recordIdOrDeveloperName}
+```
 
-1. When creating sql for segments, use these rules - https://developer.salesforce.com/docs/data/connectapi/guide/features_cdp_dbt_validations.html
+[API Docs](https://developer.salesforce.com/docs/data/connectapi/references/spec#tag/Data-Lake-Objects)
 
-2. Mathes TODO: Get dmo schema gets often called and kills the conversation with message overload
+**Sample list item:**
+```json
+{
+  "id": "1dlSB000004BXhbYAG",
+  "name": "ProvisionedFeature__dll",
+  "label": "ProvisionedFeature",
+  "category": "Other",
+  "status": "ACTIVE",
+  "namespace": "",
+  "fields": [
+    { "name": "id__c", "label": "ID", "dataType": "Text", "isPrimaryKey": true },
+    { "name": "systemmodstamp__c", "label": "System Modstamp", "dataType": "DateTime", "isPrimaryKey": false }
+  ],
+  "dataSpaceInfo": []
+}
+```
+
+---
+
+### Data Graphs
+
+**Get single data graph:**
+```
+GET https://{dne_cdpInstanceUrl}/services/data/v{version}/ssot/data-graphs/{dataGraphName}
+```
+
+**Get data graph metadata (list):**
+```
+GET https://{dne_cdpInstanceUrl}/services/data/v{version}/ssot/data-graphs/metadata?dataspace=string&dataGraphEntityName=string
+```
+
+[API Docs](https://developer.salesforce.com/docs/data/connectapi/references/spec#tag/Data-Graphs)
+
+**Sample metadata response:**
+```json
+{
+  "developerName": "IndividualDAO",
+  "description": "Data Application Object for Individual",
+  "valuesDmoName": "IndividualDao_values__dlm",
+  "idDmoName": "IndividualDao_id__dlm",
+  "dataspaceName": "default",
+  "status": "Ready",
+  "primaryObjectName": "Individual_dao__dlm",
+  "dgObject": {
+    "developerName": "Individual_dao__dlm",
+    "type": "DMO/CI",
+    "fields": [{ "developerName": "IndividualId__c", "data_type": "string" }],
+    "relatedObjects": [...]
+  },
+  "version": "1"
+}
+```
+
+---
+
+### Data Actions
+
+```
+GET https://{dne_cdpInstanceUrl}/services/data/v{version}/ssot/data-actions
+```
+
+[API Docs](https://developer.salesforce.com/docs/data/connectapi/references/spec#tag/Data-Actions)
+
+---
+
+### Data Action Targets
+
+```
+GET https://{dne_cdpInstanceUrl}/services/data/v{version}/ssot/data-action-targets
+GET https://{dne_cdpInstanceUrl}/services/data/v{version}/ssot/data-action-targets/{apiName}
+```
+
+[API Docs](https://developer.salesforce.com/docs/data/connectapi/references/spec#tag/Data-Action-Targets)
+
+---
+
+## Notes
+
+1. When creating SQL for segments, use these validation rules:
+   [CDP DBT Validations](https://developer.salesforce.com/docs/data/connectapi/guide/features_cdp_dbt_validations.html)
+
+2. **TODO (Mathes):** `get_dmo_schema` is called too frequently and causes message overload — consider caching or lazy-loading.

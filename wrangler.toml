@@ -1,0 +1,17 @@
+name = "datacloud-mcp"
+main = "src/worker.ts"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+account_id = "51f0411bb44bb1022dbe10412e1b5b9c"
+
+[vars]
+SF_AUTH_METHOD = "client_credentials"
+# SF_LOGIN_URL = "https://login.salesforce.com"
+#
+# Secrets (set via: wrangler secret put <KEY>):
+#   SF_CLIENT_ID
+#   SF_CLIENT_SECRET
+#   SF_USERNAME
+#   SF_PASSWORD
+#   SF_LOGIN_URL       (if different from default)
+#   SF_PRIVATE_KEY     (PEM content, for jwt auth method)

@@ -138,3 +138,56 @@ export async function fetchDataTransform(nameOrId: string): Promise<DataTransfor
     throw err;
   }
 }
+
+export async function fetchDataTransformRunHistory(nameOrId: string, limit = 100): Promise<unknown[]> {
+  const client = await getDCClient();
+  const url = `${DATA_TRANSFORMS_PATH}/${encodeURIComponent(nameOrId)}/run-history`;
+  console.error(`[data_transforms] GET ${client.defaults.baseURL}${url}`);
+
+  try {
+    const response = await client.get<unknown>(url, { params: { limit } });
+    console.error(`[data_transforms] HTTP ${response.status}`);
+    const raw = response.data;
+    if (Array.isArray(raw)) return raw;
+    if (raw && typeof raw === "object") {
+      const r = raw as Record<string, unknown>;
+      for (const key of ["runHistory", "data", "items", "records", "results"]) {
+        if (Array.isArray(r[key])) return r[key] as unknown[];
+      }
+      return [r as unknown];
+    }
+    return [];
+  } catch (err) {
+    if ((err as { isAxiosError?: boolean }).isAxiosError) {
+      const axiosErr = err as { response?: { data?: unknown; status?: number }; message: string };
+      const status = axiosErr.response?.status;
+      const detail = axiosErr.response?.data
+        ? JSON.stringify(axiosErr.response.data)
+        : axiosErr.message;
+      throw new Error(`Failed to fetch run history for data transform "${nameOrId}" (HTTP ${status ?? "unknown"}): ${detail}`);
+    }
+    throw err;
+  }
+}
+
+export async function fetchDataTransformSchedule(nameOrId: string): Promise<unknown> {
+  const client = await getDCClient();
+  const url = `${DATA_TRANSFORMS_PATH}/${encodeURIComponent(nameOrId)}/schedule`;
+  console.error(`[data_transforms] GET ${client.defaults.baseURL}${url}`);
+
+  try {
+    const response = await client.get<unknown>(url);
+    console.error(`[data_transforms] HTTP ${response.status}`);
+    return response.data;
+  } catch (err) {
+    if ((err as { isAxiosError?: boolean }).isAxiosError) {
+      const axiosErr = err as { response?: { data?: unknown; status?: number }; message: string };
+      const status = axiosErr.response?.status;
+      const detail = axiosErr.response?.data
+        ? JSON.stringify(axiosErr.response.data)
+        : axiosErr.message;
+      throw new Error(`Failed to fetch schedule for data transform "${nameOrId}" (HTTP ${status ?? "unknown"}): ${detail}`);
+    }
+    throw err;
+  }
+}
