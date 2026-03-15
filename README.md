@@ -1,25 +1,139 @@
 # salesforce-datacloud-mcp
 
-MCP server for **Salesforce Data Cloud (Data 360)**. Connects Claude Desktop (or any MCP client) to your Data Cloud org so you can explore data streams, Data Model Objects (DMOs), segments, and calculated insights — and create new ones — through natural language.
+MCP server for **Salesforce Data Cloud (Data 360)**. Connects Claude Desktop (or any MCP client) to your Data Cloud org so you can explore and manage the full platform — data streams, DMOs, segments, calculated insights, identity resolution, data graphs, activations, connections, profile data, ML models, clean rooms, and more — through natural language.
 
 ## Tools
+
+### Data Streams & Segments
 
 | Tool | What it does |
 |------|-------------|
 | `get_data_streams` | List all data streams with status and connector type |
 | `get_segments` | List all segments in the org |
-| `publish_segment` | Publish a segment to an activation target |
+| `publish_segment` | Publish / refresh a segment to an activation target |
+
+### Data Model Objects (DMOs)
+
+| Tool | What it does |
+|------|-------------|
 | `get_dmo_schema` | Inspect fields on one or more DMOs (filterable by name) |
 | `get_dmo_mapping` | Show how a data stream's fields map to a DMO |
 | `propose_dmo_field_mapping` | AI-suggested field mappings between a stream and a DMO |
 | `apply_dmo_field_mapping` | Write a proposed field mapping back to Data Cloud |
 | `remove_dmo_field_mapping` | Remove a field mapping from a DMO |
-| `get_data_transforms` | List all data transforms |
-| `upsert_data_transform` | Create or update a data transform |
+
+### Data Lake Objects
+
+| Tool | What it does |
+|------|-------------|
+| `get_data_lake_objects` | List all DLOs or fetch a specific one by name/ID (includes fields and schema) |
+
+### Data Transforms
+
+| Tool | What it does |
+|------|-------------|
+| `get_data_transforms` | List transforms, get a single one, or fetch its run history / schedule |
+| `upsert_data_transform` | Create or update a data transform (SQL or STL definition) |
+
+### Calculated Insights
+
+| Tool | What it does |
+|------|-------------|
 | `get_calculated_insights` | List all calculated insights and their SQL |
 | `propose_ci_sql` | Generate SQL for a new calculated insight from a description |
 | `create_calculated_insight` | Create a new calculated insight in the org |
 | `run_calculated_insight` | Trigger a calculated insight to refresh |
+
+### Identity Resolution
+
+| Tool | What it does |
+|------|-------------|
+| `get_identity_resolutions` | List IDR rulesets or fetch a specific one (match rules, reconciliation rules) |
+
+### Data Graphs
+
+| Tool | What it does |
+|------|-------------|
+| `get_data_graphs` | List data graph metadata, fetch a specific graph, or look up data by entity/ID |
+
+### Data Actions & Targets
+
+| Tool | What it does |
+|------|-------------|
+| `get_data_actions` | List Data Actions or Data Action Targets; fetch a specific target by API name |
+
+### Activations
+
+| Tool | What it does |
+|------|-------------|
+| `get_activations` | List activations, activation targets, or external platforms; get activation data |
+
+### Connections & Connectors
+
+| Tool | What it does |
+|------|-------------|
+| `get_connections` | List connections or connectors; get endpoints, schema, or sitemap for a connection |
+
+### Data Spaces
+
+| Tool | What it does |
+|------|-------------|
+| `get_data_spaces` | List data spaces, get a specific one, or list its members |
+
+### Profile API
+
+| Tool | What it does |
+|------|-------------|
+| `get_profile` | Fetch profile metadata or query profile records for a data model |
+
+### Insight Data
+
+| Tool | What it does |
+|------|-------------|
+| `get_insight_data` | Fetch insight metadata or query calculated insight data with filters/dimensions |
+
+### Query
+
+| Tool | What it does |
+|------|-------------|
+| `query_data` | Submit a SQL query, check job status, or fetch result rows |
+
+### Search Index
+
+| Tool | What it does |
+|------|-------------|
+| `get_search_index` | List search indexes, get global config, or fetch a specific index |
+
+### Machine Learning
+
+| Tool | What it does |
+|------|-------------|
+| `get_ml_models` | List configured models, model artifacts, or model setup versions |
+
+### Document Processing
+
+| Tool | What it does |
+|------|-------------|
+| `get_document_processing` | List document processing configurations or fetch global config |
+
+### Data Clean Room
+
+| Tool | What it does |
+|------|-------------|
+| `get_data_clean_room` | List collaborations, providers, specifications, or templates; get collaboration jobs |
+
+### Data Kits
+
+| Tool | What it does |
+|------|-------------|
+| `get_data_kits` | Get component dependencies or deployment status for a data kit component |
+
+### Metadata & Limits
+
+| Tool | What it does |
+|------|-------------|
+| `get_metadata` | Fetch general SSOT metadata (filterable by entity type, name, category, data space) |
+| `get_limits` | Get org API limits or current user info |
 
 ## Prerequisites
 
