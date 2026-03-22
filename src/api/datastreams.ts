@@ -4,6 +4,18 @@ const DATA_STREAMS_PATH = "/services/data/v65.0/ssot/data-streams";
 
 export type DataStream = Record<string, unknown>;
 
+// ── In-memory cache ───────────────────────────────────────────────────────────
+
+let _streamsCache: DataStream[] | null = null;
+
+export function getDataStreamsCacheSnapshot(): DataStream[] | null {
+  return _streamsCache;
+}
+
+export function invalidateDataStreamsCache(): void {
+  _streamsCache = null;
+}
+
 export interface DataStreamField {
   name: string;
   label?: string;
@@ -38,7 +50,9 @@ export async function fetchDataStreamDetail(developerName: string): Promise<Data
   }
 }
 
-export async function fetchDataStreams(limit = 100): Promise<DataStream[]> {
+export async function fetchDataStreams(limit = 100, forceRefresh = false): Promise<DataStream[]> {
+  if (_streamsCache && !forceRefresh) return _streamsCache;
+
   const client = await getDCClient();
   const fullUrl = `${client.defaults.baseURL}${DATA_STREAMS_PATH}?limit=${limit}`;
   console.error(`[datastreams] GET ${fullUrl}`);
@@ -51,15 +65,21 @@ export async function fetchDataStreams(limit = 100): Promise<DataStream[]> {
     console.error(`[datastreams] body: ${JSON.stringify(response.data).slice(0, 800)}`);
 
     const raw = response.data;
-    if (Array.isArray(raw)) return raw;
-    if (raw && typeof raw === "object") {
+    let result: DataStream[];
+    if (Array.isArray(raw)) {
+      result = raw;
+    } else if (raw && typeof raw === "object") {
+      let found: DataStream[] | null = null;
       for (const key of ["data", "dataStreams", "items", "records", "results"]) {
         const val = (raw as Record<string, unknown>)[key];
-        if (Array.isArray(val)) return val;
+        if (Array.isArray(val)) { found = val; break; }
       }
-      return [raw as DataStream];
+      result = found ?? [raw as DataStream];
+    } else {
+      result = [];
     }
-    return [];
+    _streamsCache = result;
+    return result;
   } catch (err) {
     if ((err as { isAxiosError?: boolean }).isAxiosError) {
       const axiosErr = err as {

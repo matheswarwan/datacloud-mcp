@@ -154,6 +154,16 @@ import {
   QueryDataInputSchema,
   handleQueryData,
 } from "./tools/query_data.js";
+import {
+  DESCRIBE_DATA_STREAM_TOOL,
+  DescribeDataStreamInputSchema,
+  handleDescribeDataStream,
+} from "./tools/describe_data_stream.js";
+import {
+  GET_DISTINCT_VALUES_TOOL,
+  GetDistinctValuesInputSchema,
+  handleGetDistinctValues,
+} from "./tools/get_distinct_values.js";
 
 // ── Search Index tools ────────────────────────────────────────────────────────
 import {
@@ -207,6 +217,7 @@ import {
 // ── Warm-up ───────────────────────────────────────────────────────────────────
 import { fetchDmoMetadata } from "./api/dmo.js";
 import { fetchCalculatedInsights } from "./api/calculated_insights.js";
+import { fetchDataStreams } from "./api/datastreams.js";
 
 // NOTE: create_data_stream and propose_field_mapping are disabled (API schema TBD)
 
@@ -242,6 +253,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     GET_PROFILE_TOOL,
     GET_INSIGHT_DATA_TOOL,
     QUERY_DATA_TOOL,
+    DESCRIBE_DATA_STREAM_TOOL,
+    GET_DISTINCT_VALUES_TOOL,
     GET_SEARCH_INDEX_TOOL,
     GET_ML_MODELS_TOOL,
     GET_DOCUMENT_PROCESSING_TOOL,
@@ -401,6 +414,18 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       return { content: [{ type: "text", text }] };
     }
 
+    if (name === "describe_data_stream") {
+      const input = DescribeDataStreamInputSchema.parse(args ?? {});
+      const text = await handleDescribeDataStream(input);
+      return { content: [{ type: "text", text }] };
+    }
+
+    if (name === "get_distinct_values") {
+      const input = GetDistinctValuesInputSchema.parse(args ?? {});
+      const text = await handleGetDistinctValues(input);
+      return { content: [{ type: "text", text }] };
+    }
+
     if (name === "get_search_index") {
       const input = GetSearchIndexInputSchema.parse(args ?? {});
       const text = await handleGetSearchIndex(input);
@@ -472,6 +497,14 @@ async function main() {
     )
     .catch((err) =>
       console.error("Calculated Insights cache warm-up failed:", err)
+    );
+
+  fetchDataStreams()
+    .then((streams) =>
+      console.error(`Data Streams cache ready: ${streams.length} streams`)
+    )
+    .catch((err) =>
+      console.error("Data Streams cache warm-up failed:", err)
     );
 }
 
