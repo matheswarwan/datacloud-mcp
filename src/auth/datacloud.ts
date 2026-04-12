@@ -41,3 +41,13 @@ export function invalidateDataCloudToken(): void {
   cache = null;
   resetDCClient();
 }
+
+/** Directly inject a token (used by the OAuth proxy HTTP server after login). */
+export function injectDataCloudToken(accessToken: string, instanceUrl: string): void {
+  cache = {
+    accessToken,
+    instanceUrl,
+    expiresAt: Date.now() + DEFAULT_EXPIRY_MS,
+  };
+  resetDCClient();
+}
